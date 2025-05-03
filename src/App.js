@@ -532,11 +532,9 @@ if (newGrid[nextRow][nextCol] === currentValue * 2) {
     if (moved) {
       addRandomTile(newGrid);
       setGrid(newGrid);
-      if(isAIMove){
-        playSound(aiMoveSound);
-      } else {
+      
         playSound(moveSound); 
-      }
+      
         
      // setScore(prevScore => prevScore + scoreIncrease);
       setLastMoveHadMerge(hadMerge);
