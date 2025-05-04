@@ -440,14 +440,11 @@ if (newGrid[nextRow][nextCol] === currentValue * 2) {
     }
   }
   if ([256, 512, 1024, 2048].includes(mergedValue)) {
-    //if (![256, 512, 1024, 2048].includes(mergedValue)) return;
-    // Update persistent achievements
     setAchievements(prev => {
-      // Safely get achievement data with defaults
-      const current = prev[mergedValue] || { unlocked: false, showBadge: false, count: 0 };
+      const wasUnlocked = prev[mergedValue].unlocked; // Defined here
+      const newCount = prev[mergedValue].count + 1;   // Defined here
+      const shouldShow = !wasUnlocked || newCount % 5 === 0;
       
-      const newCount = current.count + 1;
-      const shouldShow = !current.unlocked || newCount % 5 === 0;
 
       const newState = {
         ...prev,
@@ -457,50 +454,52 @@ if (newGrid[nextRow][nextCol] === currentValue * 2) {
           count: newCount
         }
       };
-
+      
       localStorage.setItem('2048-achievements', JSON.stringify(newState));
+      setSessionAchievements(prev => {
+        const wasUnlocked = prev[mergedValue].unlocked;
+        const newCount = prev[mergedValue].count + 1;
+        const shouldShow = !wasUnlocked || newCount % 5 === 0;
+        
+        return {
+          ...prev,
+          [mergedValue]: {
+            unlocked: true,
+            showBadge: shouldShow,
+            count: newCount
+          }
+        };
+      });
+
+      
+        
+
+       // Show badge if needed (from either tracker)
+const shouldShowBadge = 
+(!achievements[mergedValue].unlocked && !sessionAchievements[mergedValue].unlocked) || 
+(achievements[mergedValue].count + 1) % 5 === 0;
+
+      if (shouldShowBadge) {
+        
+        setTimeout(() => {
+          setAchievements(prev => ({
+            ...prev,
+            [mergedValue]: { ...prev[mergedValue], showBadge: false }
+          }));
+          setSessionAchievements(prev => ({
+            ...prev,
+            [mergedValue]: { ...prev[mergedValue], showBadge: false }
+          }));
+          
+        }, 3000);
+        
+        playSound(achievementSound);
+        announceMilestone(mergedValue);
+      }
+      
       return newState;
     });
-  
-    
-    // Update session achievements
-    setSessionAchievements(prev => {
-      const wasUnlocked = prev[mergedValue].unlocked;
-      const newCount = prev[mergedValue].count + 1;
-      const shouldShow = !wasUnlocked || newCount % 5 === 0;
-      
-      return {
-        ...prev,
-        [mergedValue]: {
-          unlocked: true,
-          showBadge: shouldShow,
-          count: newCount
-        }
-      };
-      
-    });
-    
-    // Show badge if needed (from either tracker)
-    const shouldShowBadge = 
-      (!achievements[mergedValue].unlocked && !sessionAchievements[mergedValue].unlocked) || 
-      (achievements[mergedValue].count + 1) % 5 === 0;
-    
-    if (shouldShowBadge) {
-
-      setTimeout(() => {
-        setAchievements(prev => ({
-          ...prev,
-          [mergedValue]: { ...prev[mergedValue], showBadge: false }
-        }));
-        setSessionAchievements(prev => ({
-          ...prev,
-          [mergedValue]: { ...prev[mergedValue], showBadge: false }
-        }));
-      }, 3000);
-      playSound(achievementSound);
-      announceMilestone(mergedValue);
-    }
-  }
+}
 }
         }
       }
@@ -1384,22 +1383,21 @@ const announceMilestone = (value) => {
 <div className="unlocked-achievements">
   <h3>Milestone Badges</h3>
   <div className="achievement-grid">
-    {[256, 512, 1024, 2048].map(value => {
-      const achievement = achievements[value] || { unlocked: false, count: 0 };
+    {[256, 512, 1024, 2048].map(value => (
       <div 
         key={`achievement-${value}`} 
-        className={`achievement-cell ${achievement.unlocked  ? 'unlocked' : 'locked'}`}
+        className={`achievement-cell ${achievements[value].unlocked ? 'unlocked' : 'locked'}`}
       >
-        {achievement.unlocked ? (
+        {achievements[value].unlocked ? (
           <>
             <div className="achievement-icon">{badgeInfo[value].icon}</div>
-            <div className="achievement-label">{value}! (×{achievement.count})</div>
+            <div className="achievement-label">{value}! (×{achievements[value].count})</div>
           </>
         ) : (
           <div className="achievement-locked">?</div>
         )}
       </div>
-  })}
+    ))}
   </div>
   <button onClick={resetAllAchievements} className="reset-btn">
       Reset Achievement Badge
