@@ -440,12 +440,15 @@ if (newGrid[nextRow][nextCol] === currentValue * 2) {
     }
   }
   if ([256, 512, 1024, 2048].includes(mergedValue)) {
+    //if (![256, 512, 1024, 2048].includes(mergedValue)) return;
     // Update persistent achievements
     setAchievements(prev => {
-      const wasUnlocked = prev[mergedValue].unlocked;
-      const newCount = prev[mergedValue].count + 1;
-      const shouldShow = !wasUnlocked || newCount % 5 === 0;
+      // Safely get achievement data with defaults
+      const current = prev[mergedValue] || { unlocked: false, showBadge: false, count: 0 };
       
+      const newCount = current.count + 1;
+      const shouldShow = !current.unlocked || newCount % 5 === 0;
+
       const newState = {
         ...prev,
         [mergedValue]: {
@@ -454,10 +457,11 @@ if (newGrid[nextRow][nextCol] === currentValue * 2) {
           count: newCount
         }
       };
-      
+
       localStorage.setItem('2048-achievements', JSON.stringify(newState));
       return newState;
     });
+  
     
     // Update session achievements
     setSessionAchievements(prev => {
@@ -1380,21 +1384,22 @@ const announceMilestone = (value) => {
 <div className="unlocked-achievements">
   <h3>Milestone Badges</h3>
   <div className="achievement-grid">
-    {[256, 512, 1024, 2048].map(value => (
+    {[256, 512, 1024, 2048].map(value => {
+      const achievement = achievements[value] || { unlocked: false, count: 0 };
       <div 
         key={`achievement-${value}`} 
-        className={`achievement-cell ${achievements[value].unlocked ? 'unlocked' : 'locked'}`}
+        className={`achievement-cell ${achievement.unlocked  ? 'unlocked' : 'locked'}`}
       >
-        {achievements[value].unlocked ? (
+        {achievement.unlocked ? (
           <>
             <div className="achievement-icon">{badgeInfo[value].icon}</div>
-            <div className="achievement-label">{value}! (×{achievements[value].count})</div>
+            <div className="achievement-label">{value}! (×{achievement.count})</div>
           </>
         ) : (
           <div className="achievement-locked">?</div>
         )}
       </div>
-    ))}
+  })}
   </div>
   <button onClick={resetAllAchievements} className="reset-btn">
       Reset Achievement Badge
